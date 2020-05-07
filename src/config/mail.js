@@ -3,8 +3,8 @@ export default {
   port: 2525,
   secure: false,
   auth: {
-    user: '8c8da73a900939',
-    pass: '2c391505f909f7',
+    user: '4b6510096745d1',
+    pass: 'dcb8b9a9c0f7ae',
   },
   default: {
     from: 'Equipe entrega10 <noreply@entrega10.com>',

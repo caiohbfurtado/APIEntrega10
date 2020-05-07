@@ -7,7 +7,8 @@ import Recipient from '../models/Recipient';
 import User from '../models/User';
 import Deliveryman from '../models/Deliveryman';
 import File from '../models/File';
-import Notification from '../schemas/Notification';
+
+import Mail from '../../lib/Mail';
 
 class OrderController {
   async index(req, res) {
@@ -98,10 +99,11 @@ class OrderController {
       user_id,
     });
 
-    // gerando notificação de criação de entrega para o entregador
-    await Notification.create({
-      content: `Nova entrega já disponível para você! Produto: ${product}. Nome do cliente: ${recipient.name}. Endereço: ${recipient.city}/${recipient.state}. CEP: ${recipient.zip_code}. Para mais informações, acesse o sistema.`,
-      deliveryman: deliveryman_id,
+    // enviando email ao entregador assim que uma encomenda é criada
+    await Mail.sendMail({
+      to: `${deliveryman.name} <${deliveryman.email}>`,
+      subject: 'Nova entrega disponível!',
+      text: `Nova entrega já disponível para você! Produto: ${product}. Nome do cliente: ${recipient.name}. Endereço: ${recipient.city}/${recipient.state}. CEP: ${recipient.zip_code}. Para mais informações, acesse o sistema.`,
     });
 
     return res.json({
@@ -242,6 +244,23 @@ class OrderController {
         .status(401)
         .json({ error: 'This user cannot change this order.' });
     }
+
+    // checando se a entrega já foi feita, então ela não pode ser deletada do sistema
+    if (order.end_date) {
+      return res.status(401).json({
+        error: 'This order has already been delivered and cannot be deleted!',
+      });
+    }
+
+    const deliveryman = await Deliveryman.findByPk(order.deliveryman_id);
+    const recipient = await Recipient.findByPk(order.recipient_id);
+
+    // enviando email ao entregador assim que uma encomenda é deletada
+    await Mail.sendMail({
+      to: `${deliveryman.name} <${deliveryman.email}>`,
+      subject: `Entrega ${order.id} cancelada!`,
+      text: `Entrega cancelada! :( Produto: ${order.product}. Nome do cliente: ${recipient.name}. Endereço: ${recipient.city}/${recipient.state}. CEP: ${recipient.zip_code}. Para mais informações, acesse o sistema.`,
+    });
 
     await order.destroy();
 
