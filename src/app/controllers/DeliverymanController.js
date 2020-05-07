@@ -11,7 +11,7 @@ class DeliverymanController {
       return res.status(401).json({ error: 'User is not a admin!' });
     }
 
-    // pegando a page que vai vir por query params
+    // pegando a page que vai vir por query param
     const { page = 1 } = req.query;
     // procurando os registros doe entregadores
     const deliverymans = await Deliveryman.findAll({
